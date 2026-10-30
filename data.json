@@ -1,0 +1,135 @@
+{
+ "seq": 14,
+ "users": [
+  {
+   "id": 1,
+   "name": "Admin Anitha",
+   "role": "admin",
+   "email": "admin@maatram.org",
+   "password": "013f7de822a317f569c3f450a085689a1ce47acb9818b3682fb8fc46c44afa21"
+  },
+  {
+   "id": 2,
+   "name": "Coordinator Karthik",
+   "role": "coordinator",
+   "email": "karthik@maatram.org",
+   "password": "e47fee2a7f2fabb0974204172d3e03f2b49d7bed057e281b27035b984068d0a0"
+  },
+  {
+   "id": 3,
+   "name": "Coordinator Divya",
+   "role": "coordinator",
+   "email": "divya@maatram.org",
+   "password": "e47fee2a7f2fabb0974204172d3e03f2b49d7bed057e281b27035b984068d0a0"
+  },
+  {
+   "id": 4,
+   "name": "Rep Surya",
+   "role": "student_rep",
+   "email": "surya@maatram.org",
+   "password": "fdd21c28a093d19bc9876775fe53537806fbe3f32a85127e5c5389e73fa0c329"
+  }
+ ],
+ "queries": [
+  {
+   "id": 10,
+   "student": "Priya S.",
+   "institution": "Anna University",
+   "category": "Scholarship",
+   "channel": "WhatsApp",
+   "priority": "High",
+   "description": "Scholarship status not updated",
+   "status": "Assigned",
+   "createdBy": 4,
+   "assignee": 2,
+   "attachments": [],
+   "createdAt": 1793238037378,
+   "updatedAt": 1793238137378,
+   "due": 1793324437378,
+   "reminded": 1793346097382,
+   "escalated": false,
+   "history": [
+    {
+     "at": 1793238037378,
+     "by": 4,
+     "action": "Query logged",
+     "note": ""
+    },
+    {
+     "at": 1793238137378,
+     "by": 1,
+     "action": "Assigned to Coordinator Karthik",
+     "note": ""
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "student": "Arun K.",
+   "institution": "SRM Institute",
+   "category": "Admission",
+   "channel": "Phone",
+   "priority": "Urgent",
+   "description": "Admission documents upload failing",
+   "status": "Assigned",
+   "createdBy": 4,
+   "assignee": 3,
+   "attachments": [],
+   "createdAt": 1793324437378,
+   "updatedAt": 1793324537378,
+   "due": 1793338837378,
+   "reminded": 0,
+   "escalated": false,
+   "history": [
+    {
+     "at": 1793324437378,
+     "by": 4,
+     "action": "Query logged",
+     "note": ""
+    },
+    {
+     "at": 1793324537378,
+     "by": 1,
+     "action": "Assigned to Coordinator Divya",
+     "note": ""
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "student": "Meena R.",
+   "institution": "Loyola College",
+   "category": "Mentoring",
+   "channel": "Email",
+   "priority": "Medium",
+   "description": "Needs a mentor for data science",
+   "status": "New",
+   "createdBy": 4,
+   "assignee": null,
+   "attachments": [],
+   "createdAt": 1793338837378,
+   "updatedAt": 1793338837378,
+   "due": 1793511637378,
+   "reminded": 0,
+   "escalated": false,
+   "history": [
+    {
+     "at": 1793338837378,
+     "by": 4,
+     "action": "Query logged",
+     "note": ""
+    }
+   ]
+  }
+ ],
+ "notifications": [
+  {
+   "id": 13,
+   "to": 2,
+   "channel": "Email",
+   "text": "Reminder: query #10 has had no update for 24h.",
+   "qid": 10,
+   "at": 1793346097382
+  }
+ ]
+}
