@@ -1,8 +1,24 @@
 const express = require('express'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const app = express(); app.use(express.json({ limit: '8mb' }));
+// serves the searchable-dropdown script and adds it to the app page automatically
+app.get('/searchable-select.js', (req, res) => res.sendFile(path.join(__dirname, 'searchable-select.js')));
+app.get(['/', '/index.html'], (req, res, next) => {
+  const f = path.join(__dirname, 'public', 'index.html'); if (!fs.existsSync(f)) return next();
+  let html = fs.readFileSync(f, 'utf8'); const tag = '<script src="/searchable-select.js"></script>';
+  if (!html.includes('searchable-select.js')) html = html.includes('</body>') ? html.replace('</body>', tag + '</body>') : html + tag;
+  res.type('html').send(html);
+});
 app.use(express.static(path.join(__dirname, 'public')));
 const DB = path.join(__dirname, 'data.json'), UP = path.join(__dirname, 'uploads');
 fs.mkdirSync(UP, { recursive: true }); app.use('/uploads', express.static(UP));
+const AV = path.join(UP, 'avatars'); fs.mkdirSync(AV, { recursive: true });
+// saves a profile photo sent as a data URL; returns '' on success or an error message
+function savePhoto(u, data) {
+  const m = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+\/=]+)$/.exec(data || ''); if (!m) return 'Photo must be a PNG, JPG or WEBP image';
+  const buf = Buffer.from(m[2], 'base64'); if (buf.length > 2 * 1024 * 1024) return 'Photo must be smaller than 2 MB';
+  if ((u.photo || '').startsWith('/uploads/avatars/')) fs.unlink(path.join(__dirname, u.photo), () => {});
+  const n = `${u.id}-${Date.now()}.${m[1] === 'webp' ? 'webp' : m[1] === 'png' ? 'png' : 'jpg'}`; fs.writeFileSync(path.join(AV, n), buf); u.photo = '/uploads/avatars/' + n; return '';
+}
 
 // ================= configuration (edit these lists to match Maatram) =================
 const H = 3600e3, SLA = { Urgent: 4 * H, High: 24 * H, Medium: 48 * H, Low: 72 * H };
@@ -33,7 +49,7 @@ const hash = (p) => crypto.createHash('sha256').update('maatram' + p).digest('he
 let db; const save = () => fs.writeFileSync(DB, JSON.stringify(db, null, 1));
 const U = (id) => db.users.find((u) => u.id === id), name = (id) => (U(id) || {}).name || '—';
 const open = (q) => !['Resolved', 'Closed'].includes(q.status), entry = (u) => ({ id: u.id, name: u.name, role: u.role });
-const pub = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, profile: u.profile || {}, profileDone: profileDone(u) });
+const pub = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, photo: u.photo || '', profile: u.profile || {}, profileDone: profileDone(u) });
 function profileDone(u) {
   const p = u.profile || {}, f = PROFILE[u.role] || [];
   const ok = f.filter((x) => x.req).every((x) => p[x.k] !== undefined && p[x.k] !== '' && p[x.k] !== null);
@@ -91,6 +107,12 @@ function seed() {
   save();
 }
 if (fs.existsSync(DB)) db = JSON.parse(fs.readFileSync(DB)); else seed();
+// clean up data saved by the older version of the app (old roles, queries without a route) so pages do not crash
+(function migrate() {
+  db.users = db.users.filter((u) => ROLES[u.role]); db.users.forEach((u) => { if (!u.profile) u.profile = {}; });
+  db.queries = db.queries.filter((q) => Array.isArray(q.route) && q.raiserId && U(q.raiserId));
+  db.notifications = db.notifications.filter((n) => typeof n.to === 'number' && U(n.to)); save();
+})();
 
 // ================= auth =================
 const sessions = {};
@@ -114,7 +136,9 @@ app.post('/api/register', (req, res) => {
   if (!ROLES[role] || !n || !email || (password || '').length < 6) return res.status(400).json({ error: 'Choose your role and enter name, email and a password of 6+ characters' });
   if (CODES[role] && code !== CODES[role]) return res.status(403).json({ error: `Enter the registration code for ${ROLES[role]}s. Ask the Maatram office for it.` });
   if (db.users.some((u) => u.email === email.toLowerCase().trim())) return res.status(400).json({ error: 'An account with this email already exists' });
-  const u = { id: db.seq++, name: n.trim(), email: email.toLowerCase().trim(), role, password: hash(password), profile: {} }; db.users.push(u); save(); session(u, res);
+  const u = { id: db.seq++, name: n.trim(), email: email.toLowerCase().trim(), role, password: hash(password), profile: {} };
+  if (req.body.photo) { const err = savePhoto(u, req.body.photo); if (err) return res.status(400).json({ error: err }); }
+  db.users.push(u); save(); session(u, res);
 });
 app.get('/api/me', auth(), (req, res) => res.json(pub(req.user)));
 app.get('/api/meta', auth(), (req, res) => res.json({ CATS, STATUSES, ROLES, REC, CAP, LISTS, PROFILE,
@@ -128,6 +152,8 @@ app.put('/api/profile', auth(), (req, res) => {
   const u = req.user, p = {};
   PROFILE[u.role].forEach((f) => { let v = req.body[f.k]; if (f.type === 'checkbox') v = !!v; else if (f.type.startsWith('user')) v = v === 'none' ? 'none' : +v || ''; else v = String(v || '').trim().slice(0, 200); p[f.k] = v; });
   if (p.phone && !/^\d{10}$/.test(p.phone)) return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+  if (req.body.photo) { const err = savePhoto(u, req.body.photo); if (err) return res.status(400).json({ error: err }); }
+  else if (req.body.removePhoto) { delete u.photo; }
   if (req.body.name && req.body.name.trim()) u.name = req.body.name.trim();
   u.profile = p; save(); res.json(pub(u));
 });
@@ -149,7 +175,7 @@ function view(q, u, full) {
   const to = U(q.toId) || { name: '—', role: '' }, r = U(q.raiserId), rp = (r && r.profile) || {};
   const o = { ...q, toName: to.name, toRole: to.role, overdue: open(q) && Date.now() > q.due };
   const lr = [...q.history].reverse().find((h) => h.note && h.by && h.by !== q.raiserId && /Status|Message/.test(h.action)); o.lastReply = lr ? { by: name(lr.by), note: lr.note, at: lr.at } : null;
-  if (u.id !== q.raiserId && r) o.raiser = { id: r.id, name: r.name, role: r.role, email: r.email, profile: rp };
+  if (u.id !== q.raiserId && r) o.raiser = { id: r.id, name: r.name, role: r.role, email: r.email, photo: r.photo || '', profile: rp };
   return o;
 }
 app.get('/api/queries', auth(), (req, res) => {
@@ -219,7 +245,7 @@ app.get('/api/stats', auth(), (req, res) => {
   const me = req.user, vis = db.queries.filter((q) => canSee(me, q)), o = vis.filter(open), done = vis.filter((q) => !open(q));
   const count = (arr, f) => arr.reduce((m, x) => ((m[f(x)] = (m[f(x)] || 0) + 1), m), {});
   const times = done.map((q) => ((q.history.find((h) => /Resolved|Closed/.test(h.action)) || { at: q.updatedAt }).at - q.createdAt));
-  const mine = vis.filter((q) => q.toId === me.id && open(q)), light = (q) => ({ lastReply: view(q, me).lastReply, id: q.id, category: q.category, raiserName: q.raiserName, status: q.status, priority: q.priority, toName: name(q.toId), overdue: open(q) && Date.now() > q.due, route: q.route, updatedAt: q.updatedAt });
+  const mine = vis.filter((q) => q.toId === me.id && open(q)), light = (q) => ({ lastReply: view(q, me).lastReply, id: q.id, raiserId: q.raiserId, category: q.category, raiserName: q.raiserName, status: q.status, priority: q.priority, toName: name(q.toId), overdue: open(q) && Date.now() > q.due, route: q.route, updatedAt: q.updatedAt });
   const raised = db.queries.filter((q) => q.raiserId === me.id), people = myPeople(me);
   res.json({ total: vis.length, open: o.length, overdue: o.filter((q) => Date.now() > q.due).length, resolved: done.length, avgHours: times.length ? +(times.reduce((a, b) => a + b, 0) / times.length / H).toFixed(1) : 0,
     withMe: mine.length, forwardedByMe: vis.filter((q) => q.history.some((h) => h.by === me.id && /^Forwarded/.test(h.action))).length,
@@ -231,7 +257,7 @@ app.get('/api/stats', auth(), (req, res) => {
 });
 app.get('/api/people', auth('admin', 'zone', 'anchor'), (req, res) => {
   const s = (req.query.q || '').toLowerCase();
-  res.json(myPeople(req.user).filter((u) => (!req.query.role || u.role === req.query.role) && (!s || [u.name, u.email, (u.profile || {}).college, (u.profile || {}).department].join(' ').toLowerCase().includes(s))).map(pub));
+  res.json(myPeople(req.user).filter((u) => (!req.query.role || u.role === req.query.role) && (!s || [u.name, u.email, ROLES[u.role], ...['college', 'department', 'degree', 'phone', 'city', 'company', 'specialisation', 'yearFrom', 'yearTo'].map((k) => (u.profile || {})[k])].join(' ').toLowerCase().includes(s))).map(pub));
 });
 app.post('/api/users', auth('admin'), (req, res) => {
   const { name: n, email, role } = req.body; let password = (req.body.password || '').trim();

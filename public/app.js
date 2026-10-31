@@ -14,9 +14,24 @@ function modal(inner, w = 460) {
   const m = document.createElement('div'); m.className = 'modal'; m.innerHTML = `<div class="panel" style="width:min(${w}px,100%)">${inner}</div>`;
   document.body.appendChild(m); m.onclick = (e) => { if (e.target === m || e.target.dataset.close !== undefined) m.remove(); }; return m;
 }
+const initials = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+function avFix(el) { const s = document.createElement('span'); s.className = el.className; s.textContent = initials(el.alt); el.replaceWith(s); } // photo file missing: show initials instead
+const avatar = (u, cls = '') => u && u.photo ? `<img class="av ${cls}" src="${esc(u.photo)}" alt="${esc(u.name)}" onerror="avFix(this)">` : `<span class="av ${cls}">${esc(initials(u && u.name))}</span>`;
+let newPhoto = null, dropPhoto = false;
+function readPhoto(file) { // shrinks the picture to 480px so uploads stay small
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onerror = () => rej(new Error('Could not read that photo'));
+    fr.onload = () => { const im = new Image(); im.onerror = () => rej(new Error('Please choose a PNG, JPG or WEBP picture'));
+      im.onload = () => { const k = Math.min(1, 480 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.85)); }; im.src = fr.result; }; fr.readAsDataURL(file); });
+}
+function wirePhoto(size = 'lg') {
+  newPhoto = null; dropPhoto = false; const inp = $('#ph'); if (!inp) return;
+  inp.onchange = async () => { const f = inp.files[0]; if (!f) return; try { newPhoto = await readPhoto(f); dropPhoto = false; $('#pv').innerHTML = `<img class="av ${size}" src="${newPhoto}" alt="Your photo">`; $('#ph_h').textContent = '✓ Photo added'; $('#ph_h').className = 'hint good'; } catch (x) { toast(x.message, 1); } };
+  const rm = $('#rmph'); if (rm) rm.onclick = () => { newPhoto = null; dropPhoto = true; inp.value = ''; $('#pv').innerHTML = avatar({ name: S.user.name }, size); $('#ph_h').textContent = 'Photo will be removed when you save'; rm.hidden = true; };
+}
+const stText = (q) => q.status === 'Waiting for student' && q.raiserId === (S.user || {}).id ? 'Waiting for your reply' : q.status;
 const catOf = (q) => esc(q.category) + (q.categoryOther ? ': ' + esc(q.categoryOther) : '');
 const uname = (id) => { if (!id || id === 'none') return 'Not sure'; const M = S.meta, x = [...M.anchors, ...M.zones].find((u) => u.id == id); return x ? x.name : '—'; };
-const stTag = (q) => `<span class="tag st-${q.status.split(' ')[0]}">${q.status}</span>${q.overdue ? ' <span class="tag od">Overdue</span>' : ''}`;
+const stTag = (q) => `<span class="tag st-${q.status.split(' ')[0]}">${stText(q)}</span>${q.overdue ? ' <span class="tag od">Overdue</span>' : ''}`;
 const crumbOf = (q, you) => `<div class="crumb"><span class="c">${you ? 'You' : esc(q.raiserName)}</span>${q.route.map((r) => `<span class="c ${r.id === q.toId ? 'now' : ''}">${esc(r.name)}<small>${ROLE[r.role]}</small></span>`).join('')}</div>`;
 
 /* ---------- sign in / sign up ---------- */
@@ -41,12 +56,13 @@ function registerView() {
   authShell(`<h2>Create your account</h2><p class="muted">Choose your role and set a password. You will complete your profile next.</p><form id="rf" style="margin-top:14px"><label for="rl">I am a</label>
   <select id="rl" required><option value="">Choose your role</option>${Object.entries(ROLE).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
   <label for="nm">Full name</label><input id="nm" required autocomplete="name"><label for="em">Email</label><input id="em" type="email" autocomplete="username" required>${pwField('pw', 'Password (6+ characters)', 'new-password')}
+  <label>Your photo *</label><div class="photo-pick"><div id="pv">${avatar({ name: '?' }, 'lg')}</div><div><label class="pickbtn" for="ph">Choose photo</label><input id="ph" type="file" accept="image/png,image/jpeg,image/webp" hidden><small class="hint" id="ph_h">Required. A clear face photo, JPG or PNG.</small></div></div>
   <div id="cd" hidden><label for="code">Registration code *</label><input id="code" autocomplete="off" placeholder="Ask the Maatram office for this code"></div>
   <p id="le" style="color:var(--bad);min-height:22px;margin-top:8px"></p><button class="btn">Create account</button></form>
   <p class="foot">Already registered? <a href="#" id="si" style="color:#FFB800;font-weight:600">Sign in</a></p>`);
-  wireToggle(); $('#si').onclick = (e) => { e.preventDefault(); loginView(); };
+  wireToggle(); wirePhoto(); $('#si').onclick = (e) => { e.preventDefault(); loginView(); };
   $('#rl').onchange = () => { const on = ['anchor', 'zone', 'admin'].includes($('#rl').value); $('#cd').hidden = !on; $('#code').required = on; };
-  $('#rf').onsubmit = async (e) => { e.preventDefault(); try { enter(await api('/register', 'POST', { role: $('#rl').value, name: $('#nm').value, email: $('#em').value, password: $('#pw').value, code: $('#code').value })); } catch (x) { $('#le').textContent = x.message; } };
+  $('#rf').onsubmit = async (e) => { e.preventDefault(); if (!newPhoto) { $('#le').textContent = 'Please add your photo'; return; } try { enter(await api('/register', 'POST', { role: $('#rl').value, name: $('#nm').value, email: $('#em').value, password: $('#pw').value, code: $('#code').value, photo: newPhoto })); } catch (x) { $('#le').textContent = x.message; } };
 }
 function enter(d) { sessionStorage.token = S.token = d.token; sessionStorage.user = JSON.stringify(d.user); S.user = d.user; S.view = 'dashboard'; S.f = {}; render(); }
 
@@ -64,7 +80,7 @@ async function render() {
   const r = S.user.role, gated = r !== 'admin' && !S.user.profileDone; if (gated) S.view = 'profile';
   const nav = gated ? [['profile', '👤 Complete profile']] : NAV[r];
   app.innerHTML = `<div class="shell"><aside><img src="logo-light.png" alt="Maatram">${nav.map((n) => `<button class="nav ${S.view === n[0] ? 'on' : ''}" data-v="${n[0]}">${n[1]}</button>`).join('')}
-  <div class="me"><b>${esc(S.user.name)}</b><br><span>${ROLE[r]}</span><br><a href="#" id="cp" class="muted">Change password</a> · <a href="#" id="lo" class="muted">Sign out</a></div></aside><main id="main"></main></div>`;
+  <div class="me"><div class="me-row">${avatar(S.user, 'sm')}<div><b>${esc(S.user.name)}</b><br><span>${ROLE[r]}</span></div></div><a href="#" id="cp" class="muted">Change password</a> · <a href="#" id="lo" class="muted">Sign out</a></div></aside><main id="main"></main></div>`;
   document.querySelectorAll('.nav').forEach((b) => (b.onclick = () => { S.view = b.dataset.v; S.f = {}; render(); }));
   $('#lo').onclick = (e) => { e.preventDefault(); logout(); }; $('#cp').onclick = (e) => { e.preventDefault(); passwordModal(); };
   try { await ({ dashboard, queries, new: newQuery, notifications, people, profile })[S.view](); } catch (e) { console.error(e); $('#main').innerHTML = `<div class="card"><b>Something went wrong loading this page.</b><p class="muted">${esc(e.message)}</p><button class="btn sm" onclick="render()">Try again</button></div>`; }
@@ -80,13 +96,13 @@ async function dashboard() {
   if (mine) {
     const reps = s.recent.filter((q) => q.lastReply), team = r === 'student' ? (reps.length ? reps.map((q) => `<div class="qi" data-q="${q.id}"><div><b>#${q.id} ${esc(q.category)}</b><br><small><b>${esc(q.lastReply.by)}:</b> ${esc(q.lastReply.note.slice(0, 110))}</small><br><small class="muted">${ago(q.lastReply.at)}</small></div><span class="muted">›</span></div>`).join('') : '<p class="muted">No replies yet. When someone answers your query, you will see it here.</p>')
       : `<p>${p.mentor ? 'You are listed as a mentor. Students can send mentoring and career queries directly to you.' : 'Turn on “I can mentor Maatram students” in your profile so students can reach you for guidance.'}</p><button class="btn ghost sm" data-go="profile">Update profile</button>`;
-    $('#main').innerHTML = `<div class="banner"><div><h1>Hello, ${first}</h1><p>${s.waitingForMe ? `${s.waitingForMe} ${s.waitingForMe > 1 ? 'queries need' : 'query needs'} your reply.` : 'Ask anything — Maatram will route it to the right person.'}</p></div><button class="btn" data-go="new">Raise a query</button></div>
+    $('#main').innerHTML = `<div class="banner"><div class="bn">${avatar(S.user, 'lg')}<div><h1>Hello, ${first}</h1><p>${s.waitingForMe ? `${s.waitingForMe} ${s.waitingForMe > 1 ? 'queries need' : 'query needs'} your reply.` : 'Ask anything — Maatram will route it to the right person.'}</p></div></div><button class="btn" data-go="new">Raise a query</button></div>
     ${cards(r === 'alumni' ? [[s.myOpen, 'My open queries'], [s.withMe, 'Mentoring requests for you'], [s.waitingForMe, 'Waiting for your reply', s.waitingForMe ? 'red' : ''], [s.myResolved, 'Solved']] : [[s.myOpen, 'Open queries'], [s.waitingForMe, 'Waiting for your reply', s.waitingForMe ? 'red' : ''], [s.myResolved, 'Solved'], [s.myTotal, 'Total raised']])}
     <div class="two"><div class="card"><h3>${s.attention.length ? 'Needs your reply' : 'Recent queries'}</h3>${(s.attention.length ? s.attention : s.recent).map((q) => qitem(q)).join('') || '<p class="muted">You have not raised a query yet.</p>'}</div>
     <div class="card"><h3>${r === 'student' ? 'Latest replies' : 'Your mentoring'}</h3>${team}</div></div>`;
   } else {
     const adm = r === 'admin', top = adm ? [[s.open, 'Open queries'], [s.overdue, 'Overdue', 'red'], [s.resolved, 'Solved'], [s.avgHours + 'h', 'Average time to solve']] : [[s.withMe, 'With you now'], [s.overdue, 'Overdue', 'red'], [s.forwardedByMe, 'Forwarded by you'], [s.resolved, 'Solved']];
-    $('#main').innerHTML = `<div class="banner"><div><h1>Hello, ${first}</h1><p>${adm ? `${s.open} open across Maatram · ${s.overdue} overdue.` : `${s.withMe} ${s.withMe === 1 ? 'query is' : 'queries are'} with you · ${s.overdue} overdue.`}</p></div><button class="btn" data-go="queries">Open queries</button></div>${cards(top)}
+    $('#main').innerHTML = `<div class="banner"><div class="bn">${avatar(S.user, 'lg')}<div><h1>Hello, ${first}</h1><p>${adm ? `${s.open} open across Maatram · ${s.overdue} overdue.` : `${s.withMe} ${s.withMe === 1 ? 'query is' : 'queries are'} with you · ${s.overdue} overdue.`}</p></div></div><button class="btn" data-go="queries">Open queries</button></div>${cards(top)}
     <div class="two"><div class="card"><h3>Needs your action</h3>${s.attention.map((q) => qitem(q, 1)).join('') || '<p class="muted">Nothing is waiting for you. Great work.</p>'}</div>
     <div class="card"><h3>${adm ? 'People on Maatram' : r === 'zone' ? 'In your zone' : 'Your students'}</h3>${Object.entries(s.people).map(([k, v]) => `<div class="bar" style="grid-template-columns:1fr auto"><span>${k}</span><b>${v}</b></div>`).join('') || '<p class="muted">No one is linked to you yet.</p>'}</div>
     <div class="card"><h3>Open queries by handler</h3>${bars(s.perHandler)}</div><div class="card"><h3>Most common categories</h3>${bars(s.perCategory)}</div></div>`;
@@ -99,10 +115,11 @@ async function queries() {
   const M = S.meta, r = S.user.role, f = S.f, rep = r === 'student', opt = (arr, v) => arr.map((a) => `<option ${a === v ? 'selected' : ''}>${a}</option>`).join('');
   const tabs = r === 'alumni' ? [['raised', 'Raised by me'], ['with', 'Sent to me']] : rep ? [] : r === 'admin' ? [['all', 'All queries'], ['with', 'With me']] : [['with', 'With me'], ['all', 'All I can see']];
   f.scope = f.scope || (rep || r === 'alumni' ? 'raised' : r === 'admin' ? 'all' : 'with');
+  const mineView = rep || (r === 'alumni' && f.scope === 'raised'), stOpts = M.STATUSES.map((a) => `<option value="${a}" ${a === f.status ? 'selected' : ''}>${a === 'Waiting for student' && mineView ? 'Waiting for your reply' : a}</option>`).join('');
   $('#main').innerHTML = `<div class="top"><div><h1>${rep ? 'My queries' : 'Queries'}</h1><p id="cnt"></p></div>${rep || r === 'alumni' ? '<button class="btn" id="nq">Raise a query</button>' : ''}</div>
   ${tabs.length ? `<div class="tabs">${tabs.map((t) => `<button class="tab ${t[0] === f.scope ? 'on' : ''}" data-s="${t[0]}">${t[1]}</button>`).join('')}</div>` : ''}
   <div class="filters" ${rep ? 'style="grid-template-columns:1fr 1fr auto"' : ''}>${rep ? '' : `<input id="fq" type="search" placeholder="Search name, college, text or #id" value="${esc(f.q || '')}" aria-label="Search">`}
-  <select id="fs" aria-label="Status"><option value="">All statuses</option>${opt(M.STATUSES, f.status)}</select><select id="fc" aria-label="Category"><option value="">All categories</option>${opt(M.CATS, f.category)}</select>
+  <select id="fs" aria-label="Status"><option value="">All statuses</option>${stOpts}</select><select id="fc" aria-label="Category"><option value="">All categories</option>${opt(M.CATS, f.category)}</select>
   ${rep ? '' : `<select id="fo" aria-label="Handler"><option value="">All handlers</option>${M.handlers.map((u) => `<option value="${u.id}" ${f.handler == u.id ? 'selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}</select>
   <input id="fd" type="date" value="${f.from || ''}" title="Raised on or after" aria-label="Raised from">`}<button class="btn ghost sm" id="fx">Show all</button></div><div class="card" id="res" style="padding:0;overflow:hidden"></div>`;
   const val = (i) => ($('#' + i) ? $('#' + i).value : '');
@@ -158,20 +175,24 @@ function newQuery() {
 }
 function profileRows(u) {
   const p = u.profile || {}, rows = [['Email', u.email]];
-  (S.meta.PROFILE[u.role] || []).forEach((f) => { let v = p[f.k]; if (v === undefined || v === '' || v === false) return; if (f.type.startsWith('user')) v = uname(v); if (v === true) v = 'Yes'; rows.push([f.label, v]); });
-  return `<div class="pgrid">${rows.map((x) => `<div><small>${esc(x[0])}</small><b>${esc(x[1])}</b></div>`).join('')}</div>`;
+  (S.meta.PROFILE[u.role] || []).forEach((f) => { let v = p[f.k]; if (v === undefined || v === '' || v === false) return; if (f.type.startsWith('user')) v = uname(v); if (v === true) v = 'Yes'; rows.push([f.label, v, f.type === 'url']); });
+  return `<div class="pgrid">${rows.map((x) => `<div><small>${esc(x[0])}</small><b>${x[2] && /^https?:/i.test(x[1]) ? `<a href="${esc(x[1])}" target="_blank" rel="noopener">${esc(x[1])}</a>` : esc(x[1])}</b></div>`).join('')}</div>`;
 }
+const profileCard = (u) => `<div class="phead mini">${avatar(u, 'lg')}<div><h2>${esc(u.name)}</h2><p><span class="tag">${ROLE[u.role]}</span> ${u.role === 'admin' ? '' : `<span class="tag ${u.profileDone ? 'st-Resolved' : 'st-New'}">${u.profileDone ? 'Profile complete' : 'Profile incomplete'}</span>`}${(u.profile || {}).mentor ? ' <span class="tag st-Resolved">Mentor</span>' : ''}</p></div></div>${profileRows(u)}`;
 async function detail(id) {
   let d; try { d = await api('/queries/' + id); } catch (x) { return toast(x.message, 1); }
   const { q, options, suggest } = d, me = S.user, M = S.meta, handles = q.toId === me.id || me.role === 'admin', raiser = q.raiserId === me.id;
   const who = (i) => i === 0 ? 'System' : i === q.raiserId ? q.raiserName : (q.route.find((r) => r.id === i) || M.handlers.find((h) => h.id === i) || { name: 'Maatram team' }).name;
-  const groups = [...new Set(options.map((o) => o.group))];
+  const groups = [...new Set(options.map((o) => o.group))], sl = (t) => raiser && t === 'Waiting for student' ? 'Waiting for your reply' : t;
+  const talk = q.history.filter((h) => h.note && /^(Status|Message|Reply|Reopened|Confirmed)/.test(h.action)),
+    talkHtml = talk.length ? `<h3 style="margin-top:18px">Conversation</h3><div class="talk">${talk.map((h) => { const st = /^Status/.test(h.action) ? h.action.replace('Status → ', '') : ''; return `<div class="msg ${h.by === me.id ? 'me' : ''}"><b>${esc(h.by === me.id ? 'You' : who(h.by))}</b>${st ? ` <span class="tag st-${st.split(' ')[0]}">${esc(sl(st))}</span>` : ''}<br>${esc(h.note)}<small>${when(h.at)}</small></div>`; }).join('')}</div>` : '';
   const m = modal(`<div class="top"><div><h1>#${q.id} · ${catOf(q)}</h1><p>${stTag(q)} · <span class="p-${q.priority}">${q.priority}</span> priority · due ${when(q.due)}</p></div><button class="btn ghost sm" data-close>Close</button></div>
   ${crumbOf(q, raiser)}
-  ${q.raiser ? `<div class="card" style="background:var(--s2);margin-bottom:12px"><b>${esc(q.raiser.name)}</b> <span class="tag">${ROLE[q.raiser.role]}</span>${profileRows(q.raiser)}</div>` : ''}
+  ${q.raiser ? `<div class="card" style="background:var(--s2);margin-bottom:12px"><div class="pcell" style="margin-bottom:6px">${avatar(q.raiser, 'lg')}<div><b>${esc(q.raiser.name)}</b> <span class="tag">${ROLE[q.raiser.role]}</span></div></div>${profileRows(q.raiser)}</div>` : ''}
   <p style="white-space:pre-wrap">${esc(q.description)}</p>
   ${q.importantInfo || q.deadline || q.contactVia ? `<div class="imp" style="margin-top:12px"><b>Important information</b><p>${q.deadline ? 'Deadline: <b>' + esc(q.deadline) + '</b><br>' : ''}${q.contactVia ? 'Prefers: <b>' + esc(q.contactVia) + '</b><br>' : ''}${esc(q.importantInfo)}</p></div>` : ''}
   ${q.attachments.map((a) => `<a class="tag" href="${a.url}" target="_blank">📎 ${esc(a.name)}</a> `).join('')}
+  ${talkHtml}
   ${handles ? `${suggest ? `<div class="notice">This looks outside your usual scope. <b>${esc(suggest.name)}</b> (${ROLE[suggest.role]}) can solve it. <button class="btn sm" id="sg">Forward to ${esc(suggest.name)}</button></div>` : ''}
   <h3 style="margin-top:18px">Reply to ${esc(q.raiserName)}</h3><div class="grid2"><div><label for="ds">Status</label><select id="ds">${['In progress', 'Waiting for student', 'Resolved', 'Closed'].map((s) => `<option ${s === q.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div></div>
   <label for="dn">Message (they will see this)</label><textarea id="dn" rows="2" placeholder="What happened, or what do you need from them?"></textarea><br><button class="btn" id="sv">Save update</button>
@@ -204,15 +225,15 @@ async function notifications(tab = 'All') {
 async function people() {
   const r = S.user.role, adm = r === 'admin', f = S.f, ttl = adm ? 'People' : r === 'zone' ? 'My zone' : 'My students';
   $('#main').innerHTML = `<div class="top"><div><h1>${ttl}</h1><p id="cnt">Loading…</p></div>${adm ? '<button class="btn" id="au">Add user</button>' : ''}</div>
-  <div class="filters" style="grid-template-columns:2fr 1fr"><input id="pq" type="search" placeholder="Search name, email, college or department" value="${esc(f.q || '')}" aria-label="Search">
+  <div class="filters" style="grid-template-columns:2fr 1fr"><input id="pq" type="search" placeholder="Search by name, college, department, phone, company…" value="${esc(f.q || '')}" aria-label="Search">
   ${r === 'anchor' ? '' : `<select id="pr" aria-label="Role"><option value="">All roles</option>${Object.entries(ROLE).filter(([k]) => adm || ['student', 'anchor'].includes(k)).map(([k, v]) => `<option value="${k}" ${f.role === k ? 'selected' : ''}>${v}</option>`).join('')}</select>`}</div>
   <div class="card" id="res" style="padding:0;overflow:hidden"></div>`;
   const load = async () => {
     f.q = $('#pq').value; f.role = $('#pr') ? $('#pr').value : '';
     const list = await api('/people?' + new URLSearchParams(Object.entries(f).filter(([, v]) => v))); $('#cnt').textContent = `${list.length} ${list.length === 1 ? 'person' : 'people'}`;
-    $('#res').innerHTML = list.length ? `<table><tr><th>Name</th><th>Role</th><th>College · Department</th><th>Profile</th>${adm ? '<th></th>' : ''}</tr>${list.map((u) => `<tr class="row" data-u="${u.id}"><td><b>${esc(u.name)}</b><br><span class="muted">${esc(u.email)}</span></td><td>${ROLE[u.role]}</td>
+    $('#res').innerHTML = list.length ? `<table><tr><th>Name</th><th>Role</th><th>College · Department</th><th>Profile</th>${adm ? '<th></th>' : ''}</tr>${list.map((u) => `<tr class="row" data-u="${u.id}"><td><div class="pcell">${avatar(u, 'sm')}<div><b>${esc(u.name)}</b><br><span class="muted">${esc(u.email)}</span></div></div></td><td>${ROLE[u.role]}</td>
     <td>${esc(u.profile.college || '—')}<br><span class="muted">${esc([u.profile.degree, u.profile.department].filter(Boolean).join(' · '))}</span></td><td><span class="tag ${u.profileDone ? 'st-Resolved' : 'st-New'}">${u.profileDone ? 'Complete' : 'Incomplete'}</span></td>${adm ? `<td><button class="btn danger sm" data-rm="${u.id}">Remove</button></td>` : ''}</tr>`).join('')}</table>` : '<div class="empty">No one found.</div>';
-    document.querySelectorAll('tr.row').forEach((x) => (x.onclick = (e) => { if (e.target.dataset.rm) return; const u = list.find((y) => y.id == x.dataset.u); modal(`<div class="top"><div><h1>${esc(u.name)}</h1><p>${ROLE[u.role]}</p></div><button class="btn ghost sm" data-close>Close</button></div>${profileRows(u)}`, 600); }));
+    document.querySelectorAll('tr.row').forEach((x) => (x.onclick = (e) => { if (e.target.dataset.rm) return; const u = list.find((y) => y.id == x.dataset.u); modal(`<div class="top" style="margin-bottom:8px"><div></div><button class="btn ghost sm" data-close>Close</button></div>${profileCard(u)}`, 640); }));
     document.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { const x = list.find((y) => y.id == b.dataset.rm);
       const m = modal(`<h2>Remove ${esc(x.name)}?</h2><p class="muted" style="margin:8px 0">They lose access immediately.${['anchor', 'zone', 'admin', 'alumni'].includes(x.role) ? ' Their open queries will be forwarded to the admin team.' : ''} This cannot be undone.</p><label>Type <b>REMOVE</b> to confirm</label><input id="cf" autocomplete="off"><br><br><button class="btn danger" id="go" disabled>Remove user</button> <button class="btn ghost" data-close>Cancel</button>`);
       $('#cf').oninput = () => ($('#go').disabled = $('#cf').value.trim() !== 'REMOVE'); $('#go').onclick = async () => { try { await api('/users/' + x.id, 'DELETE'); m.remove(); toast('User removed'); load(); } catch (e) { toast(e.message, 1); } }; }));
@@ -225,8 +246,16 @@ async function people() {
 }
 
 /* ---------- profile ---------- */
+function profileView() {
+  const u = S.user, p = u.profile || {};
+  $('#main').innerHTML = `<div class="top"><div><h1>My profile</h1><p>This is how the Maatram team sees you.</p></div><button class="btn" id="ep">✎ Edit profile</button></div>
+  <div class="pcard"><div class="pcover"></div><div class="phead">${avatar(u, 'xl')}<div><h2>${esc(u.name)}</h2><p><span class="tag">${ROLE[u.role]}</span>${p.mentor ? ' <span class="tag st-Resolved">Mentor</span>' : ''}</p><p class="muted">${esc([p.college, [p.degree, p.department].filter(Boolean).join(' · ')].filter(Boolean).join(' — ') || u.email)}</p></div></div>
+  <div class="pbody">${u.photo ? '' : '<div class="notice" style="margin:0 0 14px">You have not added a photo yet. <button class="btn sm" id="ep2">Add photo</button></div>'}${profileRows(u)}</div></div>`;
+  const go = () => { S.f.edit = true; profile(); }; $('#ep').onclick = go; if ($('#ep2')) $('#ep2').onclick = go;
+}
 function profile() {
   const u = S.user, M = S.meta, p = u.profile || {}, fields = M.PROFILE[u.role], gated = u.role !== 'admin' && !u.profileDone;
+  if (!gated && !S.f.edit) return profileView();
   const years = Array.from({ length: 41 }, (_, i) => 2035 - i), LISTF = { college: M.LISTS.colleges, degree: M.LISTS.degrees, dept: M.LISTS.departments };
   const sel = (id, arr, v, ph, req) => `<select id="${id}" name="${id}" ${req ? 'required' : ''}><option value="">${ph}</option>${arr.map((a) => `<option value="${a[0]}" ${String(a[0]) === String(v) ? 'selected' : ''}>${esc(a[1])}</option>`).join('')}</select>`;
   const field = (f) => { const v = p[f.k] ?? '', rq = f.req ? 'required' : '', lab = `<label for="${f.k}">${f.label}${f.req ? ' *' : ''}</label>`; let h;
@@ -238,8 +267,9 @@ function profile() {
     else h = `${lab}<input id="${f.k}" name="${f.k}" type="${f.type === 'url' ? 'url' : 'text'}" value="${esc(v)}" ${rq} autocomplete="off">`;
     return `<div class="fld" ${f.showIf ? `data-k="${f.showIf[0]}" data-v='${JSON.stringify(f.showIf[1])}'` : ''}>${h}</div>`; };
   $('#main').innerHTML = `<div class="top"><div><h1>My profile</h1><p>${gated ? 'Complete the fields marked * to continue.' : 'Keep your details up to date so the right people can help you.'}</p></div></div>
-  <form class="card form" id="pf" novalidate><div class="grid2"><div><label for="nm">Full name *</label><input id="nm" name="name" value="${esc(u.name)}" required></div><div><label>Email</label><input value="${esc(u.email)}" disabled></div>${fields.map(field).join('')}</div>
-  <br><button class="btn">Save profile</button></form>`;
+  <form class="card form" id="pf" novalidate><div class="photo-pick" style="margin-bottom:8px"><div id="pv">${avatar(u, 'xl')}</div><div><b>Profile photo</b><br><label class="pickbtn" for="ph">${u.photo ? 'Change photo' : 'Choose photo'}</label><input id="ph" type="file" accept="image/png,image/jpeg,image/webp" hidden>${u.photo ? ' <button type="button" class="btn ghost sm" id="rmph">Remove</button>' : ''}<small class="hint" id="ph_h">JPG, PNG or WEBP</small></div></div><div class="grid2"><div><label for="nm">Full name *</label><input id="nm" name="name" value="${esc(u.name)}" required></div><div><label>Email</label><input value="${esc(u.email)}" disabled></div>${fields.map(field).join('')}</div>
+  <br><button class="btn">Save profile</button>${gated ? '' : ' <button type="button" class="btn ghost" id="pc">Cancel</button>'}</form>`;
+  wirePhoto('xl'); if ($('#pc')) $('#pc').onclick = () => { S.f = {}; profile(); };
   const other = () => document.querySelectorAll('select[data-other]').forEach((s) => { const t = $('#' + s.id + '_o'), on = s.value === '__other'; t.hidden = !on; t.required = on && s.required; });
   document.querySelectorAll('select[data-other]').forEach((s) => s.addEventListener('change', other)); other();
   const ph = $('#phone'); if (ph) { const chk = () => { ph.value = ph.value.replace(/\D/g, '').slice(0, 10); const n = ph.value.length, h = $('#phone_h'); h.textContent = n === 0 ? '' : n === 10 ? '✓ 10 digits' : `${n} of 10 digits — a mobile number must be exactly 10 digits`; h.className = 'hint ' + (n === 10 ? 'good' : 'bad'); ph.setCustomValidity(n === 10 || (n === 0 && !ph.required) ? '' : 'Enter exactly 10 digits'); }; ph.addEventListener('input', chk); chk(); }
@@ -248,7 +278,8 @@ function profile() {
   $('#pf').onsubmit = async (e) => { e.preventDefault(); const form = e.target; if (!form.checkValidity()) { form.reportValidity(); return; }
     const b = {}; new FormData(form).forEach((v, k) => (b[k] = v)); document.querySelectorAll('select[data-other]').forEach((s) => { if (s.value === '__other') b[s.id] = $('#' + s.id + '_o').value.trim(); });
     fields.filter((f) => f.type === 'checkbox').forEach((f) => (b[f.k] = $('#' + f.k).checked));
-    try { const d = await api('/profile', 'PUT', b); toast(d.profileDone ? 'Profile saved' : 'Saved — some required fields are still empty'); if (d.profileDone && gated) S.view = 'dashboard'; render(); } catch (x) { toast(x.message, 1); } };
+    if (newPhoto) b.photo = newPhoto; else if (dropPhoto) b.removePhoto = true;
+    try { const d = await api('/profile', 'PUT', b); toast(d.profileDone ? 'Profile saved' : 'Saved — some required fields are still empty'); S.f = {}; S.view = 'profile'; render(); } catch (x) { toast(x.message, 1); } };
 }
 function passwordModal() {
   const m = modal(`<h2>Change password</h2><label>Current password</label><input id="p1" type="password"><label>New password (6+ characters)</label><input id="p2" type="password"><br><br><button class="btn" id="ps">Save</button> <button class="btn ghost" data-close>Cancel</button>`);
