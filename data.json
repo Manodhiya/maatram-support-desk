@@ -1,5 +1,5 @@
 {
- "seq": 15,
+ "seq": 37,
  "users": [
   {
    "id": 1,
@@ -27,8 +27,369 @@
     "zoneName": "vaitheeswari"
    },
    "photo": "/uploads/avatars/14-1793435176999.jpg"
+  },
+  {
+   "id": 15,
+   "name": "Vaitheeswari R",
+   "email": "vaitheeswari.r@maatram.org",
+   "role": "zone",
+   "password": "34f6dd49edd6c6b562a808ec73d03a7ec8ac6bfdb67faeae9d0ceda2d7fb8cea",
+   "profile": {
+    "phone": "9000000100",
+    "college": "Sathyabama Institute of Science and Technology",
+    "city": "Chennai",
+    "designation": "Zone Incharge"
+   }
+  },
+  {
+   "id": 16,
+   "name": "Divya Narayanan",
+   "email": "divya.narayanan@maatram.org",
+   "role": "zone",
+   "password": "34f6dd49edd6c6b562a808ec73d03a7ec8ac6bfdb67faeae9d0ceda2d7fb8cea",
+   "profile": {
+    "phone": "9000000101",
+    "college": "Rajalakshmi Engineering College",
+    "city": "Chennai",
+    "designation": "Zone Incharge"
+   }
+  },
+  {
+   "id": 17,
+   "name": "Karthik Raj",
+   "email": "karthik.raj@maatram.org",
+   "role": "zone",
+   "password": "34f6dd49edd6c6b562a808ec73d03a7ec8ac6bfdb67faeae9d0ceda2d7fb8cea",
+   "profile": {
+    "phone": "9000000102",
+    "college": "SRM Easwari Engineering College",
+    "city": "Chennai",
+    "designation": "Zone Incharge"
+   }
+  },
+  {
+   "id": 18,
+   "name": "Lakshmi Priya",
+   "email": "lakshmi.priya@maatram.org",
+   "role": "zone",
+   "password": "34f6dd49edd6c6b562a808ec73d03a7ec8ac6bfdb67faeae9d0ceda2d7fb8cea",
+   "profile": {
+    "phone": "9000000103",
+    "college": "Sri Sairam Engineering College",
+    "city": "Chennai",
+    "designation": "Zone Incharge"
+   }
+  },
+  {
+   "id": 19,
+   "name": "Rohit Menon",
+   "email": "rohit.menon@maatram.org",
+   "role": "zone",
+   "password": "34f6dd49edd6c6b562a808ec73d03a7ec8ac6bfdb67faeae9d0ceda2d7fb8cea",
+   "profile": {
+    "phone": "9000000104",
+    "college": "Velammal Engineering College",
+    "city": "Chennai",
+    "designation": "Zone Incharge"
+   }
+  },
+  {
+   "id": 20,
+   "name": "Shalini S",
+   "email": "shalini.s@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000105",
+    "college": "Sathyabama Institute of Science and Technology",
+    "degree": "B.E.",
+    "department": "ECE",
+    "yearFrom": "2024",
+    "yearTo": "2028",
+    "zoneName": "Vaitheeswari R"
+   }
+  },
+  {
+   "id": 21,
+   "name": "Imran Basha",
+   "email": "imran.basha@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000106",
+    "college": "Sathyabama Institute of Science and Technology",
+    "degree": "B.Tech.",
+    "department": "Information Technology",
+    "yearFrom": "2023",
+    "yearTo": "2027",
+    "zoneName": "Vaitheeswari R"
+   }
+  },
+  {
+   "id": 22,
+   "name": "Meena Iyer",
+   "email": "meena.iyer@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000107",
+    "college": "Rajalakshmi Engineering College",
+    "degree": "B.E.",
+    "department": "CSE",
+    "yearFrom": "2023",
+    "yearTo": "2027",
+    "zoneName": "Divya Narayanan"
+   }
+  },
+  {
+   "id": 23,
+   "name": "Pooja Lakshmi",
+   "email": "pooja.lakshmi@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000108",
+    "college": "Rajalakshmi Engineering College",
+    "degree": "B.E.",
+    "department": "AI & DS",
+    "yearFrom": "2024",
+    "yearTo": "2028",
+    "zoneName": "Divya Narayanan"
+   }
+  },
+  {
+   "id": 24,
+   "name": "Arjun Das",
+   "email": "arjun.das@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000109",
+    "college": "SRM Easwari Engineering College",
+    "degree": "B.Tech.",
+    "department": "Information Technology",
+    "yearFrom": "2023",
+    "yearTo": "2027",
+    "zoneName": "Karthik Raj"
+   }
+  },
+  {
+   "id": 25,
+   "name": "Harini K",
+   "email": "harini.k@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000110",
+    "college": "Sri Sairam Engineering College",
+    "degree": "B.E.",
+    "department": "ECE",
+    "yearFrom": "2024",
+    "yearTo": "2028",
+    "zoneName": "Lakshmi Priya"
+   }
+  },
+  {
+   "id": 26,
+   "name": "Naveen Kumar",
+   "email": "naveen.kumar@maatram.org",
+   "role": "anchor",
+   "password": "c4876716752ee99b446e53ef03090d55762ed117c893350675a390f30b81f3dc",
+   "profile": {
+    "phone": "9000000111",
+    "college": "Velammal Engineering College",
+    "degree": "B.E.",
+    "department": "Mechanical",
+    "yearFrom": "2022",
+    "yearTo": "2026",
+    "zoneName": "Rohit Menon"
+   }
+  },
+  {
+   "id": 27,
+   "name": "Suresh Babu",
+   "email": "suresh.babu@maatram.org",
+   "role": "admin",
+   "password": "013f7de822a317f569c3f450a085689a1ce47acb9818b3682fb8fc46c44afa21",
+   "profile": {
+    "phone": "9000000112",
+    "designation": "Office Coordinator"
+   }
+  },
+  {
+   "id": 28,
+   "name": "Revathi N",
+   "email": "revathi.n@maatram.org",
+   "role": "admin",
+   "password": "013f7de822a317f569c3f450a085689a1ce47acb9818b3682fb8fc46c44afa21",
+   "profile": {
+    "phone": "9000000113",
+    "designation": "Student Support Lead"
+   }
+  },
+  {
+   "id": 29,
+   "name": "Vikram Selvam",
+   "email": "vikram.selvam@maatram.org",
+   "role": "alumni",
+   "password": "6f0d2eba373484d134f20508f661090bbdc44eb4d0c21eb313273c20bbd44fce",
+   "profile": {
+    "phone": "9000000114",
+    "college": "Rajalakshmi Engineering College",
+    "degree": "B.E.",
+    "department": "CSE",
+    "yearTo": "2021",
+    "jobStatus": "Working",
+    "company": "Zoho",
+    "jobRole": "Software Engineer",
+    "city": "Chennai",
+    "mentor": true,
+    "expertise": "Web development, interview preparation"
+   }
+  },
+  {
+   "id": 30,
+   "name": "Sneha Raman",
+   "email": "sneha.raman@maatram.org",
+   "role": "alumni",
+   "password": "6f0d2eba373484d134f20508f661090bbdc44eb4d0c21eb313273c20bbd44fce",
+   "profile": {
+    "phone": "9000000115",
+    "college": "SRM Easwari Engineering College",
+    "degree": "B.Tech.",
+    "department": "Information Technology",
+    "yearTo": "2020",
+    "jobStatus": "Working",
+    "company": "Infosys",
+    "jobRole": "Systems Engineer",
+    "city": "Bengaluru",
+    "mentor": true,
+    "expertise": "Career planning, higher studies"
+   }
+  },
+  {
+   "id": 31,
+   "name": "Karan Mehta",
+   "email": "karan.mehta@maatram.org",
+   "role": "alumni",
+   "password": "6f0d2eba373484d134f20508f661090bbdc44eb4d0c21eb313273c20bbd44fce",
+   "profile": {
+    "phone": "9000000116",
+    "college": "Sathyabama Institute of Science and Technology",
+    "degree": "B.E.",
+    "department": "ECE",
+    "yearTo": "2019",
+    "jobStatus": "Working",
+    "company": "TCS",
+    "jobRole": "Data Analyst",
+    "city": "Hyderabad",
+    "mentor": true,
+    "expertise": "Data analytics, resume reviews"
+   }
+  },
+  {
+   "id": 32,
+   "name": "Divya Bharathi",
+   "email": "divya.bharathi@maatram.org",
+   "role": "alumni",
+   "password": "6f0d2eba373484d134f20508f661090bbdc44eb4d0c21eb313273c20bbd44fce",
+   "profile": {
+    "phone": "9000000117",
+    "college": "Sri Sairam Engineering College",
+    "degree": "B.E.",
+    "department": "CSE",
+    "yearTo": "2022",
+    "jobStatus": "Working",
+    "company": "Accenture",
+    "jobRole": "Business Analyst",
+    "city": "Chennai",
+    "mentor": true,
+    "expertise": "Consulting, communication skills"
+   }
+  },
+  {
+   "id": 33,
+   "name": "Aravind S",
+   "email": "aravind.s@maatram.org",
+   "role": "alumni",
+   "password": "6f0d2eba373484d134f20508f661090bbdc44eb4d0c21eb313273c20bbd44fce",
+   "profile": {
+    "phone": "9000000118",
+    "college": "Velammal Engineering College",
+    "degree": "B.E.",
+    "department": "Mechanical",
+    "yearTo": "2018",
+    "jobStatus": "Working",
+    "company": "Freshworks",
+    "jobRole": "Product Designer",
+    "city": "Chennai",
+    "mentor": true,
+    "expertise": "Design careers, portfolios"
+   }
   }
  ],
- "queries": [],
- "notifications": []
+ "queries": [
+  {
+   "id": 34,
+   "raiserId": 14,
+   "raiserName": "Mano",
+   "raiserRole": "student",
+   "category": "Admission",
+   "categoryOther": "",
+   "priority": "Low",
+   "description": "hi",
+   "deadline": "",
+   "contactVia": "",
+   "importantInfo": "",
+   "attachments": [],
+   "status": "New",
+   "toId": 21,
+   "route": [
+    {
+     "id": 21,
+     "name": "Imran Basha",
+     "role": "anchor"
+    }
+   ],
+   "createdAt": 1793437798606,
+   "updatedAt": 1793437880668,
+   "due": 1793696998606,
+   "reminded": 0,
+   "escLevel": 0,
+   "history": [
+    {
+     "at": 1793437798606,
+     "by": 14,
+     "action": "Query raised and sent to Imran Basha (Anchor)",
+     "note": ""
+    },
+    {
+     "at": 1793437880668,
+     "by": 14,
+     "action": "Reply from student",
+     "note": "hi"
+    }
+   ]
+  }
+ ],
+ "notifications": [
+  {
+   "id": 36,
+   "to": 21,
+   "channel": "In-app",
+   "text": "Mano replied on query #34.",
+   "qid": 34,
+   "type": "Update",
+   "at": 1793437880668
+  },
+  {
+   "id": 35,
+   "to": 21,
+   "channel": "Email",
+   "text": "New query #34 from Mano: hi",
+   "qid": 34,
+   "type": "Assignment",
+   "at": 1793437798606
+  }
+ ]
 }

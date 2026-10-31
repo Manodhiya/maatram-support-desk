@@ -114,6 +114,27 @@ if (fs.existsSync(DB)) db = JSON.parse(fs.readFileSync(DB)); else seed();
   db.notifications = db.notifications.filter((n) => typeof n.to === 'number' && U(n.to)); save();
 })();
 
+// Dummy anchors, zone incharges, admins and alumni, added once (skipped if the email already exists), so every "Who should solve this?" dropdown has people in it.
+(function demoPeople() {
+  let added = 0, ph = 9000000100;
+  const put = (role, name, profile) => {
+    const email = name.toLowerCase().replace(/[^a-z]+/g, '.') + '@maatram.org'; if (db.users.some((u) => u.email === email || u.name === name)) return;
+    db.users.push({ id: db.seq++, name, email, role, password: hash(role + '123'), profile: { phone: String(ph++), ...profile } }); added++;
+  };
+  const SATH = 'Sathyabama Institute of Science and Technology', RAJ = 'Rajalakshmi Engineering College', SRM = 'SRM Easwari Engineering College', SAI = 'Sri Sairam Engineering College', VEL = 'Velammal Engineering College';
+  [['Vaitheeswari R', SATH, 'Chennai'], ['Divya Narayanan', RAJ, 'Chennai'], ['Karthik Raj', SRM, 'Chennai'], ['Lakshmi Priya', SAI, 'Chennai'], ['Rohit Menon', VEL, 'Chennai']]
+    .forEach(([n, college, city]) => put('zone', n, { college, city, designation: 'Zone Incharge' }));
+  [['Shalini S', SATH, 'B.E.', 'ECE', 2024, 2028, 'Vaitheeswari R'], ['Imran Basha', SATH, 'B.Tech.', 'Information Technology', 2023, 2027, 'Vaitheeswari R'], ['Meena Iyer', RAJ, 'B.E.', 'CSE', 2023, 2027, 'Divya Narayanan'],
+    ['Pooja Lakshmi', RAJ, 'B.E.', 'AI & DS', 2024, 2028, 'Divya Narayanan'], ['Arjun Das', SRM, 'B.Tech.', 'Information Technology', 2023, 2027, 'Karthik Raj'], ['Harini K', SAI, 'B.E.', 'ECE', 2024, 2028, 'Lakshmi Priya'], ['Naveen Kumar', VEL, 'B.E.', 'Mechanical', 2022, 2026, 'Rohit Menon']]
+    .forEach(([n, college, degree, department, a, b, zoneName]) => put('anchor', n, { college, degree, department, yearFrom: String(a), yearTo: String(b), zoneName }));
+  [['Suresh Babu', 'Office Coordinator'], ['Revathi N', 'Student Support Lead']].forEach(([n, designation]) => put('admin', n, { designation }));
+  [['Vikram Selvam', RAJ, 'B.E.', 'CSE', 2021, 'Zoho', 'Software Engineer', 'Chennai', 'Web development, interview preparation'], ['Sneha Raman', SRM, 'B.Tech.', 'Information Technology', 2020, 'Infosys', 'Systems Engineer', 'Bengaluru', 'Career planning, higher studies'],
+    ['Karan Mehta', SATH, 'B.E.', 'ECE', 2019, 'TCS', 'Data Analyst', 'Hyderabad', 'Data analytics, resume reviews'], ['Divya Bharathi', SAI, 'B.E.', 'CSE', 2022, 'Accenture', 'Business Analyst', 'Chennai', 'Consulting, communication skills'],
+    ['Aravind S', VEL, 'B.E.', 'Mechanical', 2018, 'Freshworks', 'Product Designer', 'Chennai', 'Design careers, portfolios']]
+    .forEach(([n, college, degree, department, yearTo, company, jobRole, city, expertise]) => put('alumni', n, { college, degree, department, yearTo: String(yearTo), jobStatus: 'Working', company, jobRole, city, mentor: true, expertise }));
+  if (added) { save(); console.log(`Added ${added} dummy people (password = role + 123, e.g. anchor123).`); }
+})();
+
 // ================= auth =================
 const sessions = {};
 function auth(...roles) {
